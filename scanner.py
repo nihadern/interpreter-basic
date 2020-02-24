@@ -10,7 +10,8 @@ Created by Nihad Kalathingal on 2/23/2020. Modified (05-01-19)
 
 import re  # import regex library used to define lexemes
 import sys  # import sys library used for CLI arguments
-from enum import Enum  # enumerator for lexemes
+from enum import Enum, auto  # enumerator for lexemes
+
 
 class ScannerError(Exception):
     """
@@ -21,15 +22,29 @@ class ScannerError(Exception):
         self.pos = pos  # position of tuple
 
 
-# class Tokens(Enum):
-#     pass
+class Tokens(Enum):
+    """
+    Tokens of the basic subset encoded as an enumeration
+    """
+    PRINT_STMNT = auto()
+    INT_LIT = auto()
+    EOL = auto()
+    ADD_OP = auto()
+    SUB_OP = auto()
+    ASSN_OP = auto()
+    LESS_THAN = auto()
+    GREATER_THAN = auto()
+    IF_STMNT = auto()
+    THEN_STMNT = auto()
+    IDENT = auto()
+    EOF = auto()
 
 
 class Token:
     """
     Class for token which holds the type, postion, and lexeme
     """
-    def __init__(self, type: str, lexeme: str, pos: tuple):
+    def __init__(self, type: Tokens, lexeme: str, pos: tuple):
         """
         Simple constructor to assign object attributes
         """
@@ -42,7 +57,7 @@ class Token:
         Returns the string defenition of a token
         """
         str_form = "Token: {}, Lexeme: {}, Position: {}:{}"
-        return str_form.format(self.type, self.lexeme,
+        return str_form.format(self.type.name, self.lexeme,
                                self.pos[0], self.pos[1])
 
 
@@ -83,9 +98,6 @@ class Scanner:
                                       (line_num, pos))
                         # set position to end of last token
                         pos = match.end()
-                        # exclude end of line token
-                        if token_type == "EOL":
-                            break
                         # generate token
                         yield token
                         break
@@ -93,7 +105,7 @@ class Scanner:
                 if not match:
                     raise ScannerError((line_num, pos))
         # generate the EOF token for the EOF
-        yield Token("EOF", "/Z", (line_num, pos))
+        yield Token(Tokens.EOF, "/Z", (line_num, pos))
 
 
 # Questions:
@@ -110,19 +122,17 @@ class Scanner:
 
 if __name__ == "__main__":
     RULES = [
-        (r'PRINT', 'PRINT_STMNT'),
-        (r'[-+]?[0-9]+', 'INT_LIT'),
-        (r'GOTO', 'GOTO_STMNT'),
-        (r'\n', 'EOL'),
-        (r'\+', 'ADD_OP'),
-        (r'\-', 'SUB_OP'),
-        (r'=', 'ASSN_OP'),
-        (r'<', 'LESS_THAN'),
-        (r'>', 'GREATER_THAN'),
-        (r'IF', 'IF_STMNT'),
-        (r'THEN', 'THEN_STMNT'),
-        (r'END', 'END_STMNT'),
-        (r'[A-Za-z_][A-Za-z0-9_]*', 'IDENT'),
+        (r'PRINT', Tokens.PRINT_STMNT),
+        (r'[-+]?[0-9]+', Tokens.INT_LIT),
+        (r'\n', Tokens.EOL),
+        (r'\+', Tokens.ADD_OP),
+        (r'\-', Tokens.SUB_OP),
+        (r'=', Tokens.ASSN_OP),
+        (r'<', Tokens.LESS_THAN),
+        (r'>', Tokens.GREATER_THAN),
+        (r'IF', Tokens.IF_STMNT),
+        (r'THEN', Tokens.THEN_STMNT),
+        (r'[A-Za-z_][A-Za-z0-9_]*', Tokens.IDENT),
     ]
     filename = sys.argv[1]
     with open(filename, "r") as f:
