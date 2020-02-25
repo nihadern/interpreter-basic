@@ -20,7 +20,7 @@ class ScannerError(Exception):
     Used in case a lexeme is not found
     """
     def __init__(self, pos: tuple):
-        self.pos = pos  # position of tuple
+        self.pos = pos  # position of error
 
     def __str__(self):
         """
@@ -34,7 +34,7 @@ class Tokens(Enum):
     """
     Tokens of the BASIC subset encoded as an enumeration
     """
-    PRINT_STMNT = auto()
+    PRINT = auto()
     INT_LIT = auto()
     FLOAT_LIT = auto()
     EOL = auto()
@@ -45,11 +45,17 @@ class Tokens(Enum):
     GREATER_THAN = auto()
     NOT_GREATER = auto()
     NOT_LESS = auto()
-    IF_STMNT = auto()
-    THEN_STMNT = auto()
+    IF = auto()
+    THEN = auto()
     IDENT = auto()
     EOF = auto()
     LET = auto()
+    END = auto()
+    RIGHT_PEREN = auto()
+    LEFT_PEREN = auto()
+    DO = auto()
+    WHILE = auto()
+    LOOP = auto()
 
 
 class Token:
@@ -68,8 +74,9 @@ class Token:
         """
         Returns the human readable string defenition of a token
         """
-        str_form = "{}:{} - Token: {}, Lexeme: {}"
-        return repr(str_form.format(self.pos[0], self.pos[1],
+        str_form = ("Ln:{:<2} Col:{:<3} TokenID: {:<3} Token: {:<15}"
+                    "Lexeme: {:<20}")
+        return repr(str_form.format(self.pos[0], self.pos[1], self.type.value,
                                     self.type.name, self.lexeme))
 
 
@@ -82,21 +89,26 @@ class Scanner:
     # i.e keywords/ identifier
     ALPHA = [
         # check for keywords
-        (re.compile(r'IF', re.IGNORECASE), Tokens.IF_STMNT),
-        (re.compile(r'THEN', re.IGNORECASE), Tokens.THEN_STMNT),
-        (re.compile(r'PRINT', re.IGNORECASE), Tokens.PRINT_STMNT),
+        (re.compile(r'IF', re.IGNORECASE), Tokens.IF),
+        (re.compile(r'THEN', re.IGNORECASE), Tokens.THEN),
+        (re.compile(r'PRINT', re.IGNORECASE), Tokens.PRINT),
         (re.compile(r'LET', re.IGNORECASE), Tokens.LET),
+        (re.compile(r'END', re.IGNORECASE), Tokens.END),
+        (re.compile(r'DO', re.IGNORECASE), Tokens.DO),
+        (re.compile(r'WHILE', re.IGNORECASE), Tokens.WHILE),
+        (re.compile(r'LOOP', re.IGNORECASE), Tokens.LOOP),
         # check for identifier last
         (re.compile(r'[A-Za-z0-9_]{1,31}'), Tokens.IDENT)
     ]
     # regex matching order for tokens that start with non-alpha starting char
     # i.e. data types, operators, identifier
-    UKNOWN = [
+    NON_ALPHA = [
         # check for the two data types, float and integer
         (re.compile(r'[-+]?\d*\.\d+'), Tokens.FLOAT_LIT),
         (re.compile(r'[-+]?[0-9]+'), Tokens.INT_LIT),
         # check for operators
-        (re.compile(r'\n'), Tokens.EOL),
+        (re.compile(r'\)'), Tokens.RIGHT_PEREN),
+        (re.compile(r'\('), Tokens.LEFT_PEREN),
         (re.compile(r'\+'), Tokens.ADD_OP),
         (re.compile(r'\-'), Tokens.SUB_OP),
         (re.compile(r'='), Tokens.EQUAL_OP),
@@ -104,6 +116,8 @@ class Scanner:
         (re.compile(r'>'), Tokens.GREATER_THAN),
         (re.compile(r'<='), Tokens.NOT_GREATER),
         (re.compile(r'>='), Tokens.NOT_LESS),
+        # check for end of line
+        (re.compile(r'\n'), Tokens.EOL),
         # check for identifier last
         (re.compile(r'[A-Za-z0-9_]{1,31}'), Tokens.IDENT)
     ]
@@ -150,7 +164,7 @@ class Scanner:
                     yield self._match_token(self.ALPHA)
                 # if not look in unknown group
                 else:
-                    yield self._match_token(self.UKNOWN)
+                    yield self._match_token(self.NON_ALPHA)
         # generate the EOF token for the EOF
         yield Token(Tokens.EOF, "/Z", (self.line_num+1, self.pos+1))
 
