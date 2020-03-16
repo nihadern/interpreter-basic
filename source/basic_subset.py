@@ -1,6 +1,6 @@
 """
 A Subset of BASIC (ECMA 116 Standard)
-Created by Nihad Kalathingal on 2/23/2020. Modified (03-01-2020)
+Created by Nihad Kalathingal on 2/23/2020. Modified (03-04-2020)
     Kennesaw State University
     College of Computing and Software Engineering
     Department of Computer Science
@@ -16,7 +16,7 @@ import re  # import regex library used to define lexemes
     This file includes the definitions for the basic subset chosen from the
     ECMA 116 Standard. The Tokens are described as Enums which inherit from
     a base class into children with Token types. A ALPHA and NON_ALPHA tuple
-    defines the lexemes using regular expressions as well as the order in 
+    defines the lexemes using regular expressions as well as the order in
     which they are matched in the scanner.
 """
 

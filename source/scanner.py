@@ -1,6 +1,6 @@
 """
 Python Implementation of a Scanner for a Subset of BASIC (ECMA 116 Standard)
-Created by Nihad Kalathingal on 2/23/2020. Modified (03-01-2020)
+Created by Nihad Kalathingal on 2/23/2020. Modified (03-04-2020)
     Kennesaw State University
     College of Computing and Software Engineering
     Department of Computer Science
@@ -13,14 +13,29 @@ import re  # import regex library used to match lexemes
 import sys  # import sys library used for CLI arguments
 from basic_subset import *   # import the basic subset to be used
 
+"""
+The scanner is implemented in the Scanner class which uses the rules
+specified in the basic_subset.py file. The scanner is instansiated
+with a source file and returns the associated tokens in that file.
+The scanner throws an exception of type ScannerError if a unkown lexeme
+is found. The class Token is the output of the Scanner which contains
+the type, postion, and lexeme which is to be used by other parts of the
+interpreter.
+"""
+
 
 class Token:
     """
-    Class for token which contains the type, postion, and lexeme
+    Class for token which contains the type, postion, and lexeme.
     """
     def __init__(self, type: Tokens, lexeme: str, pos: tuple):
         """
         Simple constructor to assign token attributes
+
+        Parameters:
+        type (Tokens): the token encoded as an enum
+        lexeme (str): the lexeme that was matched
+        pos (tuple): tuple of length 2 of the form (row, column)
         """
         self.type = type
         self.lexeme = lexeme
@@ -39,14 +54,20 @@ class Token:
 class ScannerError(Exception):
     """
     Exception class for a scanner error.
-    Used in case a lexeme is not found
+    Used in case a lexeme is not found.
     """
     def __init__(self, pos: tuple):
+        """
+        Simple constructor to assign ScannerError attributes.
+
+        Parameters:
+        pos (tuple): tuple of length 2 of the form (row, column)
+        """
         self.pos = pos  # position of error
 
     def __str__(self):
         """
-        Returns an error message with details of the error
+        Returns an error message with details of the error.
         """
         return "ERORR: Unknown lexeme at Ln:{} Col:{}".format(self.pos[0],
                                                               self.pos[1])
@@ -55,14 +76,24 @@ class ScannerError(Exception):
 class Scanner:
     """
     Scanner class which tokenizes from a given buffer based on regex rules
-    for lexemes
+    for lexemes.
     """
     def __init__(self, source):
+        """
+        Simple constructor to assign Scanner attributes.
+
+        Parameters:
+        source (Buffer): source file/buffer
+        """
         self.source = source  # source code
 
     def __match_token(self, group):
         """
-        Internaly used function that matches a token in a specified group
+        Internaly used function that matches a token in a specified group.
+
+        Parameters:
+        source (tuple): tuple of tuples which contain the compiled rule
+                        and Enum for tokens for which to perform match to.
         """
         match = None  # set to no matches found for lexeme
         # Iterate trhough available rules for lexemes
@@ -82,7 +113,7 @@ class Scanner:
 
     def lex(self):
         """
-        Generates a Token object for each lexeme found per regex rules
+        Generates a Token object for each lexeme found per regex rules.
         """
         # iterate through lines in the buffer
         for self.line_num, self.line in enumerate(self.source):
@@ -104,6 +135,18 @@ class Scanner:
 
 # ------------------------ main --------------------------------------------
 if __name__ == "__main__":
+    '''
+    Ensure that the Python 3 interpreter is installed.
+    The scanner can be used with BASIC file using the following command:
+
+    python3 scanner.py <filename>
+
+    For example:
+    python3 scanner.py test.bas
+
+    Ensure that the file is in the same folder as the script or provide an
+    a path to file.
+    '''
     # get the filename from the first CLI argument
     filename = sys.argv[1]
     # use with function to open/close file and use exception handling
