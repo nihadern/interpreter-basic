@@ -61,6 +61,8 @@ class Operators(Tokens):
     """Operators in the basic subset."""
     ADD_OP = auto()
     SUB_OP = auto()
+    MULT_OP = auto()
+    DIV_OP = auto()
     EQUAL_OP = auto()
     LESS_THAN = auto()
     GREATER_THAN = auto()
@@ -96,6 +98,8 @@ NON_ALPHA = (
     (re.compile(r'\('), Operators.LEFT_PEREN),
     (re.compile(r'\+'), Operators.ADD_OP),
     (re.compile(r'\-'), Operators.SUB_OP),
+    (re.compile(r'\*'), Operators.MULT_OP),
+    (re.compile(r'\/'), Operators.DIV_OP),
     (re.compile(r'='), Operators.EQUAL_OP),
     (re.compile(r'<'), Operators.LESS_THAN),
     (re.compile(r'>'), Operators.GREATER_THAN),

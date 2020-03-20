@@ -69,7 +69,8 @@ class ScannerError(Exception):
         """
         Returns an error message with details of the error.
         """
-        return "ERORR: Unknown lexeme at Ln:{} Col:{}".format(self.pos[0],
+        return "ScannerError: Unknown lexeme at Ln:{} Col:{}".format(
+                                                              self.pos[0],
                                                               self.pos[1])
 
 

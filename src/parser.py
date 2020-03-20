@@ -14,6 +14,8 @@ class ParserError(Exception):
 
         Parameters:
         pos (tuple): tuple of length 2 of the form (row, column)
+        pos (str): string description of an error, a generic error is used
+                   if none is given
         """
         if err is None:
             # use a default error if none specified
@@ -25,8 +27,8 @@ class ParserError(Exception):
         """
         Returns an error message with details of the error.
         """
-        return "ERORR: {} Ln:{} Col:{}".format(self.err, self.pos[0],
-                                               self.pos[1])
+        return "ParserError: {} Ln:{} Col:{}".format(self.err, self.pos[0],
+                                                     self.pos[1])
 
 
 # <program> -> <statements>
@@ -37,17 +39,16 @@ def program():
 
 
 # <statements> -> <statement>
-# 		| <statement> EOL <statements> END
+# 		| <statement> EOL <statements>
 def statements():
-    print("<statements>")
+    # print("<statements>")
     statement()
-    lex()
     if next_token.type == Delimiters.EOL:
         statements()
-    elif next_token.type == Keywords.END:
-        print("</statements>")
-    else:
-        raise ParserError(next_token.pos, "Invalid statements")
+    # else:
+        # print("</statements>")
+    # else:
+    #     raise ParserError(next_token.pos, "Invalid statements")
 
 
 # <statement> -> <assn_stmnt>
@@ -65,10 +66,18 @@ def statement():
         do_while()
     elif next_token.type == Keywords.IF:
         if_stmnt()
+    elif next_token.type == Keywords.END:
+        end_stmnt()
     else:
         raise ParserError(next_token.pos, "Invalid type of statement")
 
     print("</statement>")
+
+
+# <end_statement> -> END
+def end_stmnt():
+    print("<end_stmnt>")
+    print("</end_stmnt>")
 
 
 # # <assn_stment> -> LET IDENT EQUAL_OP <expr>
@@ -79,34 +88,36 @@ def assn_stmnt():
         raise ParserError(next_token.pos,
                           "Invalid identifier in assignment statement")
     lex()
-    if next_token.type != Identifiers.IDENT:
+    if next_token.type != Operators.EQUAL_OP:
         raise ParserError(next_token.pos, "Invalid assignment statement")
+    expr()
     print("</assn_stmnt>")
 
 
-# <expr> -> <expr> ADD_OP <term> | <expr> SUB_OP <term>
+# <expr> -> <term> ADD_OP <expr>
+#           | <term> SUB_OP <expr>
+#           | <term>
 def expr():
     print("<expr>")
-    lex()
-    if next_token != Operators.ADD_OP or next_token != Operators.SUB_OP:
-        expr()
-    else:
-        term()
     term()
+    if next_token.type == Operators.ADD_OP:
+        expr()
+    elif next_token.type == Operators.SUB_OP:
+        expr()
     print("</expr>")
 
 
-# <term> -> <term> MULT_OP <factor>
-# 	| <term> DIV_OP <factor>
+# <term> -> <factor> MULT_OP <term>
+# 	| <factor> DIV_OP <term>
 # 	| <factor>
 def term():
     print("<term>")
+    factor()
     lex()
-    if next_token == Operators.MULT_OP or next_token == Operators.DIV_OP:
-        factor()
-    else:
-        factor()
-    # TODO: how to fix the factor alone issue
+    if next_token.type == Operators.MULT_OP:
+        term()
+    elif next_token.type == Operators.DIV_OP:
+        term()
     print("</term>")
 
 
@@ -114,19 +125,20 @@ def term():
 def factor():
     print("<factor>")
     lex()
-    if next_token == Operators.LEFT_PEREN:
+
+    if next_token.type == Operators.LEFT_PEREN:
         expr()
-        lex()
-        if next_token != Operators.RIGHT_PEREN:
-            raise ParserError("Mismatched perenthesis", next_token.pos)
-    elif next_token == Identifiers.IDENT:
+        # lex()
+        if next_token.type != Operators.RIGHT_PEREN:
+            raise ParserError(next_token.pos, "Mismatched perenthesis")
+    elif next_token.type == Identifiers.IDENT:
         pass
-    elif next_token == Literals.INT_LIT:
+    elif next_token.type == Literals.INT_LIT:
         pass
-    elif next_token == Literals.FLOAT_LIT:
+    elif next_token.type == Literals.FLOAT_LIT:
         pass
     else:
-        raise ParserError("Invalid factor", next_token.pos)
+        raise ParserError(next_token.pos, "Invalid factor")
 
     print("</factor>")
 
@@ -143,44 +155,48 @@ def do_while():
     print("<do_while>")
     lex()
     if next_token.type != Keywords.WHILE:
-        raise ParserError("Invalid loop", next_token.pos)
+        raise ParserError(next_token.pos, "Invalid loop")
     relational_expr()
-    lex()
-    if next_token.type != Delimiters.EOL:
-        raise ParserError("Invalid loop", next_token.pos)
+    # lex()
+    # if next_token.type != Delimiters.EOL:
+    #     raise ParserError(next_token.pos, "Invalid loop")
     body()
-    lex()
-    if next_token.type != Delimiters.EOL:
-        raise ParserError("Invalid loop", next_token.pos)
     print("</do_while>")
 
 
-# <if_stmnt> ->  IF <relational-expression> THEN EOL <body> IF
+# <if_stmnt> ->  IF <relational-expression> THEN EOL <body> END IF
 def if_stmnt():
     print("<if_stmnt>")
     relational_expr()
-    lex()
+    # lex()
     if next_token.type != Keywords.THEN:
-        raise ParserError("Invalid if statement", next_token.pos)
+        raise ParserError(next_token.pos, "Invalid if statement")
     lex()
     if next_token.type != Delimiters.EOL:
-        raise ParserError("Invalid if statement", next_token.pos)
+        raise ParserError(next_token.pos, "Invalid if statement")
     body()
-    if next_token.type != Keywords.IF:
-        raise ParserError("Invalid if statement", next_token.pos)
     print("</if_stmnt>")
 
 
 # <body> -> <statement> LOOP
-# 	| <statement> EOL <body> EOL LOOP
-#   | <statement> EOL <body> EOL END
+# 	| <statement> <body> EOL LOOP
+#   | <statement> <body> EOL END IF
 def body():
     print("<body>")
     statement()
     lex()
-    if next_token.type != Delimiters.EOL:
-        raise ParserError("Invalid body", next_token.pos)
-    if next_token.type != Keywords.LOOP or next_token.type != Keywords.END:
+    if next_token.type == Keywords.LOOP:
+        lex()
+        if (next_token.type != Delimiters.EOL):
+            raise ParserError(next_token.pos)
+    elif next_token.type == Keywords.END:
+        lex()
+        if (next_token.type != Keywords.IF):
+            raise ParserError(next_token.pos)
+        lex()
+        if (next_token.type != Delimiters.EOL):
+            raise ParserError(next_token.pos)
+    else:
         body()
     print("</body>")
 
@@ -207,8 +223,8 @@ def relational_expr():
 
 
 def lex():
-    token = next(scanner.lex())
-    print(token.lexeme)
+    token = next(lexer)
+    print(token)
     global next_token
     next_token = token
 
@@ -219,6 +235,8 @@ if __name__ == "__main__":
     with open(filename, "r") as f:
         scanner = Scanner(f)  # create a scanner object with a source file
         # try catch to catch any scanner errors
+        global lexer
+        lexer = scanner.lex()
         try:
             program()
         except ParserError as e:
