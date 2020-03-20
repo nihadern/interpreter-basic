@@ -53,8 +53,6 @@ def statements():
     if next_token.type == Delimiters.EOL:
         statements()
     # else:
-        # print("</statements>")
-    # else:
     #     raise ParserError(next_token.pos, "Invalid statements")
 
 
@@ -62,6 +60,7 @@ def statements():
 # 		| <print_stmnt>
 # 		| <do_while>
 # 		| <if_stmnt>
+#       | END
 def statement():
     print("<statement>")
     lex()
@@ -74,7 +73,8 @@ def statement():
     elif next_token.type == Keywords.IF:
         if_stmnt()
     elif next_token.type == Keywords.END:
-        end_stmnt()
+        # end of programs, do nothing
+        pass
     elif next_token.type == Delimiters.EOL:
         #  empty statement/line, do nothing
         pass
@@ -82,12 +82,6 @@ def statement():
         raise ParserError(next_token.pos, "Invalid type of statement")
 
     print("</statement>")
-
-
-# <end_statement> -> END
-def end_stmnt():
-    print("<end_stmnt>")
-    print("</end_stmnt>")
 
 
 # # <assn_stment> -> LET IDENT EQUAL_OP <expr>
@@ -113,7 +107,7 @@ def expr():
     if next_token.type == Operators.ADD_OP:
         expr()
     elif next_token.type == Operators.SUB_OP:
-        expr()
+        expr()  
     print("</expr>")
 
 
@@ -138,7 +132,6 @@ def factor():
 
     if next_token.type == Operators.LEFT_PEREN:
         expr()
-        # lex()
         if next_token.type != Operators.RIGHT_PEREN:
             raise ParserError(next_token.pos, "Mismatched perenthesis")
     elif next_token.type == Identifiers.IDENT:
@@ -160,18 +153,24 @@ def print_stmnt():
     print("</print_stmnt>")
 
 
-# <do_while> -> DO WHILE <relational-expression> EOL <body>
+# <do_while> -> DO WHILE <relational-expression> EOL <statement> LOOP
 def do_while():
     print("<do_while>")
     lex()
     if next_token.type != Keywords.WHILE:
         raise ParserError(next_token.pos, "Invalid loop")
     relational_expr()
-    body()
+    statement()
+    lex()
+    if next_token.type != Keywords.LOOP:
+        raise ParserError(next_token.pos, "Invalid loop")
+    lex()
+    if next_token.type != Delimiters.EOL:
+        raise ParserError(next_token.pos, "Invalid loop")
     print("</do_while>")
 
 
-# <if_stmnt> ->  IF <relational-expression> THEN EOL <body> END IF
+# <if_stmnt> ->  IF <relational-expression> THEN EOL <statement> END IF
 def if_stmnt():
     print("<if_stmnt>")
     relational_expr()
@@ -181,32 +180,17 @@ def if_stmnt():
     lex()
     if next_token.type != Delimiters.EOL:
         raise ParserError(next_token.pos, "Invalid if statement")
-    body()
-    print("</if_stmnt>")
-
-
-#   <body> -> <statement> LOOP
-# 	| <statement> EOL <body> EOL LOOP
-#   | <statement> EOL <body> EOL END IF
-def body():
-    print("<body>")
     statement()
     lex()
-    if next_token.type == Keywords.LOOP:
-        lex()
-        if (next_token.type != Delimiters.EOL):
-            raise ParserError(next_token.pos)
-    elif next_token.type == Delimiters.EOL:
-        body()
-        if next_token.type == Keywords.END:
-            lex()
-            if (next_token.type != Keywords.IF):
-                raise ParserError(next_token.pos)
-            lex()
-            if (next_token.type != Delimiters.EOL):
-                raise ParserError(next_token.pos)
-    # TODO: else cases where an error is raised
-    print("</body>")
+    if next_token.type != Keywords.END:
+        raise ParserError(next_token.pos, "Invalid loop")
+    lex()
+    if next_token.type != Keywords.IF:
+        raise ParserError(next_token.pos, "Invalid loop")
+    lex()
+    if next_token.type != Delimiters.EOL:
+        raise ParserError(next_token.pos, "Invalid loop")
+    print("</if_stmnt>")
 
 
 # <relational-expression> -> <expr> EQUAL_OP <expr>
@@ -217,7 +201,6 @@ def body():
 def relational_expr():
     print("<relational_expr>")
     expr()
-    # TODO: should this really be one?
     if next_token.type == Operators.EQUAL_OP:
         expr()
     elif next_token.type == Operators.LESS_THAN:
@@ -255,4 +238,4 @@ if __name__ == "__main__":
         try:
             program()
         except ParserError as e:
-            print(e)
+            print(e.with_traceback())
