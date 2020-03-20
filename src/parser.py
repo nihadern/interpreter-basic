@@ -68,6 +68,9 @@ def statement():
         if_stmnt()
     elif next_token.type == Keywords.END:
         end_stmnt()
+    elif next_token.type == Delimiters.EOL:
+        #  empty statement/line, do nothing
+        pass
     else:
         raise ParserError(next_token.pos, "Invalid type of statement")
 
@@ -223,7 +226,13 @@ def relational_expr():
 
 
 def lex():
-    token = next(lexer)
+    try:
+        # get the next token
+        token = next(lexer)
+    except ScannerError as e:
+        # catch any errors and print them
+        print(e)
+    # prin the token
     print(token)
     global next_token
     next_token = token
@@ -234,9 +243,10 @@ if __name__ == "__main__":
     # use with function to open/close file and use exception handling
     with open(filename, "r") as f:
         scanner = Scanner(f)  # create a scanner object with a source file
-        # try catch to catch any scanner errors
+        # make the generator global to be used with parser functions
         global lexer
         lexer = scanner.lex()
+        # try catch to catch any parser errors
         try:
             program()
         except ParserError as e:
