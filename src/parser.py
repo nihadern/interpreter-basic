@@ -3,6 +3,13 @@ from basic_subset import *
 import sys
 
 
+# global varibales used through parser functions
+global lexer
+global next_token
+next_token = None
+lexer = None
+
+
 class ParserError(Exception):
     """
     Exception class for a Parser error.
@@ -10,7 +17,7 @@ class ParserError(Exception):
     """
     def __init__(self, pos: tuple, err=None):
         """
-        Simple constructor to assign ScannerError attributes.
+        Simple constructor to assign ParserError attributes.
 
         Parameters:
         pos (tuple): tuple of length 2 of the form (row, column)
@@ -160,9 +167,6 @@ def do_while():
     if next_token.type != Keywords.WHILE:
         raise ParserError(next_token.pos, "Invalid loop")
     relational_expr()
-    # lex()
-    # if next_token.type != Delimiters.EOL:
-    #     raise ParserError(next_token.pos, "Invalid loop")
     body()
     print("</do_while>")
 
@@ -181,9 +185,9 @@ def if_stmnt():
     print("</if_stmnt>")
 
 
-# <body> -> <statement> LOOP
-# 	| <statement> <body> EOL LOOP
-#   | <statement> <body> EOL END IF
+#   <body> -> <statement> LOOP
+# 	| <statement> EOL <body> EOL LOOP
+#   | <statement> EOL <body> EOL END IF
 def body():
     print("<body>")
     statement()
@@ -192,15 +196,16 @@ def body():
         lex()
         if (next_token.type != Delimiters.EOL):
             raise ParserError(next_token.pos)
-    elif next_token.type == Keywords.END:
-        lex()
-        if (next_token.type != Keywords.IF):
-            raise ParserError(next_token.pos)
-        lex()
-        if (next_token.type != Delimiters.EOL):
-            raise ParserError(next_token.pos)
-    else:
+    elif next_token.type == Delimiters.EOL:
         body()
+        if next_token.type == Keywords.END:
+            lex()
+            if (next_token.type != Keywords.IF):
+                raise ParserError(next_token.pos)
+            lex()
+            if (next_token.type != Delimiters.EOL):
+                raise ParserError(next_token.pos)
+    # TODO: else cases where an error is raised
     print("</body>")
 
 
@@ -212,6 +217,7 @@ def body():
 def relational_expr():
     print("<relational_expr>")
     expr()
+    # TODO: should this really be one?
     if next_token.type == Operators.EQUAL_OP:
         expr()
     elif next_token.type == Operators.LESS_THAN:
@@ -244,7 +250,6 @@ if __name__ == "__main__":
     with open(filename, "r") as f:
         scanner = Scanner(f)  # create a scanner object with a source file
         # make the generator global to be used with parser functions
-        global lexer
         lexer = scanner.lex()
         # try catch to catch any parser errors
         try:

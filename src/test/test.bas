@@ -5,7 +5,6 @@ let x = a - (b + 5)
 IF x < 5 THEN
     PRINT 50
 END IF
-
 let i = (5 - 4) * 6 / 3
 DO WHILE i < 5
     let i = i + 1

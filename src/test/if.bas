@@ -1,0 +1,10 @@
+let x = 5
+IF x < 5 THEN
+    PRINT 90
+END IF
+
+IF x = 5 THEN
+    PRINT 60
+    PRINT 80
+END IF
+END
