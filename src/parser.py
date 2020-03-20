@@ -49,6 +49,7 @@ def program():
 # 		| <statement> EOL <statements>
 def statements():
     # print("<statements>")
+    lex()
     statement()
     if next_token.type == Delimiters.EOL:
         statements()
@@ -63,7 +64,7 @@ def statements():
 #       | END
 def statement():
     print("<statement>")
-    lex()
+    # lex()
     if next_token.type == Keywords.LET:
         assn_stmnt()
     elif next_token.type == Keywords.PRINT:
@@ -107,7 +108,7 @@ def expr():
     if next_token.type == Operators.ADD_OP:
         expr()
     elif next_token.type == Operators.SUB_OP:
-        expr()  
+        expr()
     print("</expr>")
 
 
@@ -160,8 +161,8 @@ def do_while():
     if next_token.type != Keywords.WHILE:
         raise ParserError(next_token.pos, "Invalid loop")
     relational_expr()
-    statement()
-    lex()
+    body()
+    # lex()
     if next_token.type != Keywords.LOOP:
         raise ParserError(next_token.pos, "Invalid loop")
     lex()
@@ -170,7 +171,7 @@ def do_while():
     print("</do_while>")
 
 
-# <if_stmnt> ->  IF <relational-expression> THEN EOL <statement> END IF
+# <if_stmnt> ->  IF <relational-expression> THEN EOL <body> IF EOL
 def if_stmnt():
     print("<if_stmnt>")
     relational_expr()
@@ -180,16 +181,12 @@ def if_stmnt():
     lex()
     if next_token.type != Delimiters.EOL:
         raise ParserError(next_token.pos, "Invalid if statement")
-    statement()
-    lex()
-    if next_token.type != Keywords.END:
-        raise ParserError(next_token.pos, "Invalid loop")
-    lex()
+    body()
     if next_token.type != Keywords.IF:
         raise ParserError(next_token.pos, "Invalid loop")
     lex()
     if next_token.type != Delimiters.EOL:
-        raise ParserError(next_token.pos, "Invalid loop")
+        raise ParserError(next_token.pos, "Invalid if statement")
     print("</if_stmnt>")
 
 
@@ -212,6 +209,18 @@ def relational_expr():
     elif next_token.type == Operators.NOT_LESS:
         expr()
     print("</relational_expr>")
+
+
+# body -> <statement><body>
+#         |<statement> IF
+#         |<statement> LOOP
+def body():
+    print("<body>")
+    lex()
+    while(next_token.type != Keywords.IF and next_token.type != Keywords.LOOP):
+        statement()
+        lex()
+    print("</body>")
 
 
 def lex():

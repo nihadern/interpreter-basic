@@ -4,6 +4,8 @@ IF x < 5 THEN
 END IF
 
 IF x = 5 THEN
-    PRINT 60
+    PRINT 1
+    PRINT 2
+    PRINT 2
 END IF
 END

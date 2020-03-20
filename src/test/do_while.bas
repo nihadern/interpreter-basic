@@ -4,5 +4,7 @@ DO WHILE i < 5
 LOOP
 DO WHILE i < 5
     PRINT 1
+    PRINT 2
+    PRINT 3
 LOOP
 END
