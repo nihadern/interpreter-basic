@@ -336,6 +336,20 @@ def lex():
 
 
 if __name__ == "__main__":
+    '''
+    Ensure that the Python 3 interpreter is installed.
+    The parser can be used with BASIC file using the following command:
+
+    python3 parser.py <filename>
+
+    For example:
+
+    python3 parser.py test.bas
+
+    Ensure that the file is in the same folder as the script or provide an
+    a path to file.
+    '''
+    # get the filename from the first CLI argument
     filename = sys.argv[1]
     # use with function to open/close file and use exception handling
     with open(filename, "r") as f:
