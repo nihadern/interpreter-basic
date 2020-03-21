@@ -14,6 +14,14 @@ from scanner import *   # import scanner and scanner errors
 from basic_subset import *  # import the basic subset with the tokens
 import sys  # import sys used for CLI args
 
+"""
+The parser is implemented as functions which uses the BNF grammar rules
+specified for the chosen Basic subset. The implementation is direct
+in the sense that each non-terminal in the grammar has a function.
+The parser uses the scanner to retrieve tokens specified by the Token
+in the lex() function. The parser throws a ParserError if an invalid
+statment is found.
+"""
 
 # global varibales used through parser functions
 global lexer  # the generator of lexemes from the scanner
