@@ -7,6 +7,7 @@ Created by Nihad Kalathingal and Nick Green on 3/19/2020. Modified (03-20-2020)
     4308 Concepts of Programming Languages 03
     Module 3 – 2nd Deliverable
     Nihad Kalathingal (nkalathi@students.kennesaw.edu)
+    Nick Green (ngreen@students.kennesaw.edu)
 """
 
 from scanner import *   # import scanner and scanner errors
@@ -351,7 +352,7 @@ if __name__ == "__main__":
     '''
     # get the filename from the first CLI argument
     filename = sys.argv[1]
-    # use with function to open/close file and use exception handling
+    # use with context manager to open/close file and use exception handling
     with open(filename, "r") as f:
         scanner = Scanner(f)  # create a scanner object with a source file
         # make the generator global to be used with parser functions
