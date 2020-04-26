@@ -10,7 +10,7 @@ Created by Nihad Kalathingal and Nick Green on 3/19/2020. Modified (03-20-2020)
     Nick Green (ngreen@students.kennesaw.edu)
 """
 
-from scanner import *   # import scanner and scanner errors
+from basic_scanner import *   # import scanner and scanner errors
 from basic_subset import *  # import the basic subset with the tokens
 import sys  # import sys used for CLI args
 
@@ -79,6 +79,9 @@ class Statement:
             self.rel_expr = rel_expr
             self.body = body
 
+    class End:
+        pass
+
 
 class Expression:
     def __init__(self, operator, term, expr):
@@ -101,13 +104,13 @@ class Factor:
 
 
 class RelationalExpression:
-    def __init__(self, l_exp, r_exp):
+    def __init__(self, l_exp, operator, r_exp):
         self.l_exp = l_exp
         self.r_exp = r_exp
 
 
-class Parser():
-    def __init__(self, scanner, ):
+class Parser:
+    def __init__(self, scanner):
         """
         Simple constructor to initialize next_token and lexer.
         """
@@ -166,9 +169,7 @@ class Parser():
         elif self.next_token.type == Keywords.IF:
             statement = self.if_stmnt()
         elif self.next_token.type == Keywords.END:
-            # end of program/statement, do nothing
-            pass
-        elif self.next_token.type == Delimiters.EOL:
+            statement = Statement.End()
             #  empty statement/line, do nothing
             pass
         else:
@@ -369,20 +370,26 @@ class Parser():
         # print("<relational_expr>")
         # parse the expression
         l_expr = self.expr()
+        operator = None
         # parse another expression if an operator is present
         if self.next_token.type == Operators.EQUAL_OP:
+            operator = Operators.EQUAL_OP
             r_expr = self.expr()
         elif self.next_token.type == Operators.LESS_THAN:
+            operator = Operators.LESS_THAN
             r_expr = self.expr()
         elif self.next_token.type == Operators.GREATER_THAN:
+            operator = Operators.GREATER_THAN
             r_expr = self.expr()
         elif self.next_token.type == Operators.NOT_GREATER:
+            operator = Operators.NOT_GREATER
             r_expr = self.expr()
         elif self.next_token.type == Operators.NOT_LESS:
+            operator = Operators.NOT_LESS
             r_expr = self.expr()
         # exit relational_expr
         # print("</relational_expr>")
-        return RelationalExpression(l_expr, r_expr)
+        return RelationalExpression(l_expr, operator, r_expr)
 
     def body(self):
         """
