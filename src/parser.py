@@ -23,49 +23,97 @@ in the lex() function. The parser throws a ParserError if an invalid
 statment is found.
 """
 
-# global varibales used through parser functions
-#global lexer  # the generator of lexemes from the scanner
-#global next_token  # next token / look ahead from scanner
-#next_token = None
-#lexer = None
 
-class parser():
+class ParserError(Exception):
+    """
+    Exception class for a Parser error.
+    Used in case a parsing error occurs.
+    """
 
-    def __init__(self):
+    def __init__(self, pos: tuple, err=None):
+        """
+        Simple constructor to assign ParserError attributes.
+
+        Parameters:
+        pos (tuple): tuple of length 2 of the form (row, column)
+        pos (str): string description of an error, a generic error is used
+        if none is given
+        """
+
+        if err is None:
+            # use a default error if none specified
+            err = "Parsing error occured."
+        self.err = err
+        self.pos = pos  # position of error
+
+    def __str__(self):
+        """
+        Returns an error message with details of the error.
+        """
+        return "ParserError: {} Ln:{} Col:{}".format(self.err, self.pos[0],
+                                                     self.pos[1])
+
+
+class Program:
+    def __init__(self, statements):
+        self.statements = statements
+
+
+class Statement:
+    class Assignment:
+        def __init__(self, identifier, expr):
+            self.identifier = identifier
+            self.expr = expr
+
+    class Print:
+        def __init__(self, expr):
+            self.expr = expr
+
+    class DoWhile:
+        def __init__(self, rel_expr, body):
+            self.rel_expr = rel_expr
+            self.body = body
+
+    class If:
+        def __init__(self, rel_expr, body):
+            self.rel_expr = rel_expr
+            self.body = body
+
+
+class Expression:
+    def __init__(self, operator, term, expr):
+        self.operator = operator
+        self.term = term
+        self.expr = expr
+
+
+class Term:
+    def __init__(self, factor, operator, term):
+        self.factor = factor
+        self.operator = operator
+        self.term = term
+
+
+class Factor:
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
+
+
+class RelationalExpression:
+    def __init__(self, l_exp, r_exp):
+        self.l_exp = l_exp
+        self.r_exp = r_exp
+
+
+class Parser():
+    def __init__(self, scanner, ):
         """
         Simple constructor to initialize next_token and lexer.
         """
-        next_token = None
-        lexer = None
-
-    class ParserError(Exception):
-        """
-        Exception class for a Parser error.
-        Used in case a parsing error occurs.
-        """
-        def __init__(self, pos: tuple, err=None):
-            """
-            Simple constructor to assign ParserError attributes.
-
-            Parameters:
-            pos (tuple): tuple of length 2 of the form (row, column)
-            pos (str): string description of an error, a generic error is used
-            if none is given
-            """
-
-            if err is None:
-                # use a default error if none specified
-                err = "Parsing error occured."
-            self.err = err
-            self.pos = pos  # position of error
-
-        def __str__(self):
-            """
-            Returns an error message with details of the error.
-            """
-            return "ParserError: {} Ln:{} Col:{}".format(self.err, self.pos[0],
-                                                         self.pos[1])
-
+        self.next_token = None
+        self.lexer = scanner.lex()
+        self.scanner = scanner
 
     def program(self):
         """
@@ -74,12 +122,12 @@ class parser():
         <program> -> <statements>
         """
         # enter program
-        print("<program>")
+        # print("<program>")
         # parse statements
-        self.statements()
+        statements = self.statements()
+        return Program(statements)
         # exit program
-        print("</program>")
-
+        # print("</program>")
 
     def statements(self):
         """
@@ -89,11 +137,12 @@ class parser():
         """
         # parse statemnt
         self.lex()
-        self.statement()
+        statements = []
+        statements.append(self.statement())
         # while mext token EOL parse statements
         if self.next_token.type == Delimiters.EOL:
-            self.statements()
-
+            statements = statements + self.statements()
+        return statements
 
     def statement(self):
         """
@@ -105,16 +154,17 @@ class parser():
                     | END
         """
         # enter statement
-        print("<statement>")
+        # print("<statement>")
         # choose type of statement based on next_token
+        statement = None
         if self.next_token.type == Keywords.LET:
-            self.assn_stmnt()
+            statement = self.assn_stmnt()
         elif self.next_token.type == Keywords.PRINT:
-            self.print_stmnt()
+            statement = self.print_stmnt()
         elif self.next_token.type == Keywords.DO:
-            self.do_while()
+            statement = self.do_while()
         elif self.next_token.type == Keywords.IF:
-            self.if_stmnt()
+            statement = self.if_stmnt()
         elif self.next_token.type == Keywords.END:
             # end of program/statement, do nothing
             pass
@@ -123,10 +173,11 @@ class parser():
             pass
         else:
             # raise a parsing error as its not a valid statement
-            raise self.ParserError(self.next_token.pos, "Invalid type of statement")
+            raise ParserError(self.next_token.pos,
+                              "Invalid type of statement")
         # exit statement
-        print("</statement>")
-
+        # print("</statement>")
+        return statement
 
     def assn_stmnt(self):
         """
@@ -134,21 +185,24 @@ class parser():
         <assn_stment> -> LET IDENT EQUAL_OP <expr>
         """
         # enter assig_stmnt
-        print("<assn_stmnt>")
+        # print("<assn_stmnt>")
         # check for identifier
         self.lex()
+        identifier = self.next_token.lexeme
         if self.next_token.type != Identifiers.IDENT:
-            raise self.ParserError(self.next_token.pos,
+            raise ParserError(self.next_token.pos,
                               "Invalid identifier in assignment statement")
         # check for assinment operator
         self.lex()
         if self.next_token.type != Operators.EQUAL_OP:
-            raise self.ParserError(self.next_token.pos, "Invalid assignment statement")
+            raise ParserError(self.next_token.pos,
+                              "Invalid assignment statement")
         # parse an expression
-        self.expr()
-        # exit assig_stmnt
-        print("</assn_stmnt>")
+        expression = self.expr()
 
+        # exit assig_stmnt
+        # print("</assn_stmnt>")
+        return Statement.Assignment(identifier, expression)
 
     def expr(self):
         """
@@ -158,17 +212,21 @@ class parser():
                 | <term>
         """
         # enter expr
-        print("<expr>")
+        # print("<expr>")
         # parse a term
-        self.term()
+        term = self.term()
+        operator = None
+        expression = None
         # check for addition or subtraction, if so parse the expression after
         if self.next_token.type == Operators.ADD_OP:
-            self.expr()
+            operator = Operators.ADD_OP
+            expression = self.expr()
         elif self.next_token.type == Operators.SUB_OP:
-            self.expr()
+            operator = Operators.SUB_OP
+            expression = self.expr()
         # exit expression
-        print("</expr>")
-
+        # print("</expr>")
+        return Expression(operator, term, expression)
 
     def term(self):
         """
@@ -178,18 +236,22 @@ class parser():
                 | <factor>
         """
         # enter term
-        print("<term>")
+        # print("<term>")
         # parse a factor
-        self.factor()
+        factor = self.factor()
+        operator = None
         # check for multiplication/division, if so parse another term
         self.lex()
+        term = None
         if self.next_token.type == Operators.MULT_OP:
-            self.term()
+            operator = Operators.MULT_OP
+            term = self.term()
         elif self.next_token.type == Operators.DIV_OP:
-            self.term()
+            operator = Operators.DIV_OP
+            term = self.term()
         # exit term
-        print("</term>")
-
+        # print("</term>")
+        return Term(factor, operator, term)
 
     def factor(self):
         """
@@ -197,28 +259,33 @@ class parser():
         <factor> -> LEFT_PEREN<expr>RIGHT_PEREN | ID | FLOAT_LIT | INT_LIT
         """
         # enter factor
-        print("<factor>")
+        # print("<factor>")
         # look for parentheses
         self.lex()
         if self.next_token.type == Operators.LEFT_PEREN:
+            type_of = type(Expression)
             # parse an expression
-            self.expr()
+            value = self.expr()
             # ensure parenthesis are balanced
             if self.next_token.type != Operators.RIGHT_PEREN:
-                raise self.ParserError(self.next_token.pos, "Mismatched parenthesis")
+                raise ParserError(
+                    self.next_token.pos, "Mismatched parenthesis")
         # if identifier. int_lit, or float_lit, reached terminal, do nothing
         elif self.next_token.type == Identifiers.IDENT:
-            pass
+            type_of = Identifiers.IDENT
+            value = self.next_token.lexeme
         elif self.next_token.type == Literals.INT_LIT:
-            pass
+            type_of = Literals.INT_LIT
+            value = int(self.next_token.lexeme)
         elif self.next_token.type == Literals.FLOAT_LIT:
-            pass
+            type_of = Literals.FLOAT_LIT
+            value = float(self.next_token.lexeme)
         else:
             # raise an error if none of the above conditions matched
-            raise self.ParserError(self.next_token.pos, "Invalid factor")
+            raise ParserError(self.next_token.pos, "Invalid factor")
         # exit factor
-        print("</factor>")
-
+        # print("</factor>")
+        return Factor(type_of, value)
 
     def print_stmnt(self):
         """
@@ -226,12 +293,12 @@ class parser():
         <print_stmnt> -> PRINT <expr>
         """
         # enter print
-        print("<print_stmnt>")
+        # print("<print_stmnt>")
         # parse expression
-        self.expr()
+        expression = self.expr()
         # exit print
-        print("</print_stmnt>")
-
+        # print("</print_stmnt>")
+        return Statement.Print(expression)
 
     def do_while(self):
         """
@@ -239,26 +306,26 @@ class parser():
         <do_while> -> DO WHILE <relational-expression> EOL <statement> LOOP
         """
         # enter do_while
-        print("<do_while>")
+        # print("<do_while>")
         # check for while statement
         self.lex()
         # if no while raise an error
         if self.next_token.type != Keywords.WHILE:
-            raise self.ParserError(self.next_token.pos, "Invalid loop")
+            raise ParserError(self.next_token.pos, "Invalid loop")
         # parse relational expression
-        self.relational_expr()
+        rel_exp = self.relational_expr()
         # parse the body
-        self.body()
+        body = self.body()
         # check for loop end else raise error
         if self.next_token.type != Keywords.LOOP:
-            raise self.ParserError(self.next_token.pos, "Invalid loop")
+            raise ParserError(self.next_token.pos, "Invalid loop")
         # check for loop EOL else raise error
         self.lex()
         if self.next_token.type != Delimiters.EOL:
-            raise self.ParserError(self.next_token.pos, "Invalid loop")
+            raise ParserError(self.next_token.pos, "Invalid loop")
         # exit do_while
-        print("</do_while>")
-
+        # print("</do_while>")
+        return Statement.DoWhile(rel_exp, body)
 
     def if_stmnt(self):
         """
@@ -266,28 +333,28 @@ class parser():
         <if_stmnt> ->  IF <relational-expression> THEN EOL <body> IF EOL
         """
         # enter if_stmnt
-        print("<if_stmnt>")
+        # print("<if_stmnt>")
         # parse relational expression
-        self.relational_expr()
+        rel_exp = self.relational_expr()
         # check for if otherwise raise error
         if self.next_token.type != Keywords.THEN:
-            raise self.ParserError(self.next_token.pos, "Invalid if statement")
+            raise ParserError(self.next_token.pos, "Invalid if statement")
         # check for EOL, otherwise raise error
         self.lex()
         if self.next_token.type != Delimiters.EOL:
-            raise self.ParserError(self.next_token.pos, "Invalid if statement")
+            raise ParserError(self.next_token.pos, "Invalid if statement")
         # parse the body
-        self.body()
+        body = self.body()
         # check for end if otherwise raise error
         if self.next_token.type != Keywords.IF:
-            raise self.ParserError(self.next_token.pos, "Invalid if statement")
+            raise ParserError(self.next_token.pos, "Invalid if statement")
         # check for EOL, otherwise raise error
         self.lex()
         if self.next_token.type != Delimiters.EOL:
-            raise self.ParserError(self.next_token.pos, "Invalid if statement")
+            raise ParserError(self.next_token.pos, "Invalid if statement")
         # exit if_stmnt
-        print("</if_stmnt>")
-
+        # print("</if_stmnt>")
+        return Statement.If(rel_exp, body)
 
     def relational_expr(self):
         """
@@ -299,23 +366,23 @@ class parser():
                                     | <expr> NOT_LESS <expr>
         """
         # enter relational_expr
-        print("<relational_expr>")
+        # print("<relational_expr>")
         # parse the expression
-        self.expr()
+        l_expr = self.expr()
         # parse another expression if an operator is present
         if self.next_token.type == Operators.EQUAL_OP:
-            self.expr()
+            r_expr = self.expr()
         elif self.next_token.type == Operators.LESS_THAN:
-            self.expr()
+            r_expr = self.expr()
         elif self.next_token.type == Operators.GREATER_THAN:
-            self.expr()
+            r_expr = self.expr()
         elif self.next_token.type == Operators.NOT_GREATER:
-            self.expr()
+            r_expr = self.expr()
         elif self.next_token.type == Operators.NOT_LESS:
-            self.expr()
+            r_expr = self.expr()
         # exit relational_expr
-        print("</relational_expr>")
-
+        # print("</relational_expr>")
+        return RelationalExpression(l_expr, r_expr)
 
     def body(self):
         """
@@ -325,20 +392,22 @@ class parser():
             |<statement> LOOP
         """
         # enter body
-        print("<body>")
+        # print("<body>")
+        statements = []
         self.lex()
         # parse statements while not end of loop/if statement
-        while(self.next_token.type != Keywords.IF and self.next_token.type != Keywords.LOOP):
-            self.statement()
+        while(self.next_token.type != Keywords.IF
+              and self.next_token.type != Keywords.LOOP):
+            statements.append(self.statement())
             self.lex()
         # exit body
-        print("</body>")
-
+        # print("</body>")
+        return statements
 
     def lex(self):
         """
-        retrieves next token from scanner and assigns the next token to a globally
-        available variable, to be used by other parser functions.
+        retrieves next token from scanner and assigns the next token to a
+        instance available variable, to be used by other parser functions.
         """
         try:
             # get the next token
@@ -347,40 +416,43 @@ class parser():
             # catch any errors and print them
             print(e)
         # print the token
-        print(token)
-        # make next token global and available to other functions
-        #global next_token
+        # print(token)
         self.next_token = token
 
-    def main(self, file):
-        #if self.__name__ == "__main__":
-            '''
-            Ensure that the Python 3 interpreter is installed.
-            The parser can be used with BASIC file using the following command:
-                
-            python3 parser.py <filename>
-                
-            For example:
-            
-            python3 parser.py test.bas
-            
-            Ensure that the file is in the same folder as the script or provide an
-            a path to file.
-            '''
-            # get the filename from the first CLI argument
-            filename = file
-            # use with context manager to open/close file and use exception handling
-            with open(filename, "r") as f:
-                scanner = Scanner(f)  # create a scanner object with a source file
-                # make the generator global to be used with parser functions
-                self.lexer = scanner.lex()
-                # try catch to catch any parser errors
-                try:
-                    # start parsing the program
-                    self.program()
-                except self.ParserError as e:
-                    # if a parsing error occurred, alert the user
-                    print(e)
-                except Exception as e:
-                    # print any other errors
-                    print(e)
+
+def main():
+    '''
+    Ensure that the Python 3 interpreter is installed.
+    The parser can be used with BASIC file using the following command:
+
+    python3 parser.py <filename>
+
+    For example:
+
+    python3 parser.py test.bas
+
+    Ensure that the file is in the same folder as the script or provide an
+    a path to file.
+    '''
+    # get the filename from the first CLI argument
+    filename = sys.argv[1]
+    # use with context manager to open/close file and use
+    # exception handling
+    with open(filename, "r") as f:
+        scanner = Scanner(f)  # create a scanner object with a source file
+        # make the generator global to be used with parser functions
+        parser = Parser(scanner)
+        # try catch to catch any parser errors
+        try:
+            # start parsing the program
+            parse_tree = parser.program()
+        except ParserError as e:
+            # if a parsing error occurred, alert the user
+            print(e)
+        except Exception as e:
+            # print any other errors
+            print(e)
+
+
+if __name__ == "__main__":
+    main()
