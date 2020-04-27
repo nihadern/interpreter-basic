@@ -36,10 +36,8 @@ class Factor:
         self.value = value
 
     def resolve(self, env: dict) -> Union[float, int]:
-        if self.type == Literals.INT_LIT:
-            return int(self.value)
-        elif self.type == Literals.FLOAT_LIT:
-            return float(self.value)
+        if self.type == Literals.INT_LIT or self.type == Literals.FLOAT_LIT:
+            return self.value
         elif self.type == Identifiers.IDENT:
             try:
                 return env[self.value]

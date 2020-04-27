@@ -3,3 +3,5 @@
 *.zip
 __pycache__/
 .vscode/launch.json
+.idea/
+.idea/inspectionProfiles/profiles_settings.xml
