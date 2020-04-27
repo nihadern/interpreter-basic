@@ -7,4 +7,5 @@ DO WHILE i < 5
     PRINT 2
     PRINT 3
 LOOP
+PRINT i 
 END

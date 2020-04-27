@@ -1,4 +1,4 @@
-let x = 5
+let x = 20
 IF x < 5 THEN
     PRINT 90
 END IF

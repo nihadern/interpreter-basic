@@ -13,7 +13,7 @@ Created by Nihad Kalathingal and Nick Green on 3/19/2020. Modified (03-20-2020)
 from basic_scanner import *   # import scanner and scanner errors
 from basic_subset import *  # import the basic subset with the tokens
 import sys  # import sys used for CLI args
-
+from basic_program import *
 """
 The parser is implemented as functions which uses the BNF grammar rules
 specified for the chosen Basic subset. The implementation is direct
@@ -52,61 +52,6 @@ class ParserError(Exception):
         """
         return "ParserError: {} Ln:{} Col:{}".format(self.err, self.pos[0],
                                                      self.pos[1])
-
-
-class Program:
-    def __init__(self, statements):
-        self.statements = statements
-
-
-class Statement:
-    class Assignment:
-        def __init__(self, identifier, expr):
-            self.identifier = identifier
-            self.expr = expr
-
-    class Print:
-        def __init__(self, expr):
-            self.expr = expr
-
-    class DoWhile:
-        def __init__(self, rel_expr, body):
-            self.rel_expr = rel_expr
-            self.body = body
-
-    class If:
-        def __init__(self, rel_expr, body):
-            self.rel_expr = rel_expr
-            self.body = body
-
-    class End:
-        pass
-
-
-class Expression:
-    def __init__(self, operator, term, expr):
-        self.operator = operator
-        self.term = term
-        self.expr = expr
-
-
-class Term:
-    def __init__(self, factor, operator, term):
-        self.factor = factor
-        self.operator = operator
-        self.term = term
-
-
-class Factor:
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
-
-
-class RelationalExpression:
-    def __init__(self, l_exp, operator, r_exp):
-        self.l_exp = l_exp
-        self.r_exp = r_exp
 
 
 class Parser:
@@ -171,7 +116,9 @@ class Parser:
         elif self.next_token.type == Keywords.END:
             statement = Statement.End()
             #  empty statement/line, do nothing
-            pass
+        elif self.next_token.type == Delimiters.EOL:
+            statement = Statement.End()
+            #  empty statement/line, do nothing
         else:
             # raise a parsing error as its not a valid statement
             raise ParserError(self.next_token.pos,
