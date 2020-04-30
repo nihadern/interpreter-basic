@@ -136,8 +136,10 @@ class Parser:
                                     | NOT_GREATER
                                     | NOT_LESS) <addition>)*
         """
+        # lex to get the first term in expression
         self.lex()
         expr = self.addition()
+        # iterate while there are more comparison operations
         while self.next_token.type in (Operators.EQUAL_OP,
                                        Operators.LESS_THAN,
                                        Operators.GREATER_THAN,
@@ -146,45 +148,52 @@ class Parser:
             operator = self.next_token.type
             self.lex()
             right = self.addition()
+            # combine expressions
             expr = Expression.Binary(expr, operator, right)
         return expr
 
-    def addition(self):
+    def addition(self) -> Expression:
         """
         Function for the addition non-terminal following the BNF rule:
         <addition> -> <multiplication> ((ADD_OP | SUB_OP) <multiplication>)
         """
         expr = self.multiplication()
+        # iterate while there are more addition/substraction operations
         while self.next_token.type in (Operators.ADD_OP, Operators.SUB_OP):
             operator = self.next_token.type
             self.lex()
             right = self.multiplication()
+            # combine expressions
             expr = Expression.Binary(expr, operator, right)
         return expr
 
-    def multiplication(self):
+    def multiplication(self) -> Expression:
         """
         Function for the multiplication non-terminal following the BNF rule:
         <multiplication> -> <unary> ((DIV_OP | MULT_OP) <unary>)*
         """
         expr = self.unary()
+        # iterate while there are more addition/substraction operations
         while self.next_token.type in (Operators.MULT_OP, Operators.DIV_OP):
             operator = self.next_token.type
             self.lex()
             right = self.unary()
+            # combine expressions
             expr = Expression.Binary(expr, operator, right)
         return expr
 
-    def unary(self):
+    def unary(self) -> Expression:
         """
         Function for the unary non-terminal following the BNF rule:
         <unary> -> (ADD_OP | SUB_OP) <unary> | <primary>
         """
+        # check if a unary expression
         if self.next_token.type in (Operators.ADD_OP, Operators.SUB_OP):
             operator = self.next_token.type
             expr = self.expr()
             return Expression.Unary(operator, expr)
         else:
+            # otherwise its a primary expression
             return self.primary()
 
     def primary(self):
@@ -194,28 +203,36 @@ class Parser:
                     | INT_LIT
                     | RIGHT_PEREN < expr > LEFT_PEREN
         """
+        # parse literals
         if self.next_token.type == Literals.FLOAT_LIT:
             expr = Expression.Literal(Literals.FLOAT_LIT,
                                       float(self.next_token.lexeme))
+            # consume literal
             self.lex()
             return expr
         elif self.next_token.type == Literals.INT_LIT:
             expr = Expression.Literal(Literals.INT_LIT,
                                       int(self.next_token.lexeme))
+            # consume literal
             self.lex()
             return expr
+        # parse a grouping expressions
         elif self.next_token.type == Operators.LEFT_PEREN:
             expr = self.expr()
             if self.next_token.type != Operators.RIGHT_PEREN:
                 raise ParserError(self.next_token.pos,
                                   "Mismatched perenthesis")
+            # consume perenthesis
             self.lex()
             return Expression.Grouping(expr)
+        # parse identifiers
         elif self.next_token.type == Identifiers.IDENT:
             expr = Expression.Variable(self.next_token.lexeme)
+            # consume identifier
             self.lex()
             return expr
         else:
+            # raise an erorr because an illegal primary was recieved
             raise ParserError(self.next_token.pos, "Illegal primary")
 
     def assn_stmnt(self):
