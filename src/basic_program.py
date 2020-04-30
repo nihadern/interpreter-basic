@@ -1,5 +1,6 @@
 from basic_subset import Operators, Literals, Identifiers, Tokens
 from typing import Union
+from abc import ABC, abstractmethod
 
 
 class InterpreterError(Exception):
@@ -30,80 +31,78 @@ class InterpreterError(Exception):
         return "InterpreterError: {}".format(self.err)
 
 
-class Factor:
-    def __init__(self, type, value: str):
-        self.type = type
-        self.value = value
-
-    def resolve(self, env: dict) -> Union[float, int]:
-        if self.type == Literals.INT_LIT or self.type == Literals.FLOAT_LIT:
-            return self.value
-        elif self.type == Identifiers.IDENT:
-            try:
-                return env[self.value]
-            except KeyError:
-                raise InterpreterError(
-                    "{} used before assignment".format(self.value))
-        else:
-            return self.value.resolve(env)
-
-
-class Term:
-    def __init__(self, factor: Factor, operator: Operators, term):
-        self.factor = factor
-        self.operator = operator
-        self.term = term
-
-    def resolve(self, env: dict) -> Union[float, int]:
-        factor_val = self.factor.resolve(env)
-        if self.operator:
-            if self.operator == Operators.MULT_OP:
-                return factor_val * self.term.resolve(env)
-            elif self.operator == Operators.DIV_OP:
-                return factor_val / self.term.resolve(env)
-            else:
-                raise InterpreterError("Invalid operator in expression")
-        else:
-            return factor_val
-
-
 class Expression:
-    def __init__(self, operator: Operators, term: Term, expr):
-        self.operator = operator
-        self.term = term
-        self.expr = expr
+    class Literal:
 
-    def resolve(self, env: dict) -> Union[float, int]:
-        term_val = self.term.resolve(env)
-        if self.operator:
-            if self.operator == Operators.ADD_OP:
-                return term_val + self.expr.resolve(env)
-            elif self.operator == Operators.SUB_OP:
-                return term_val - self.expr.resolve(env)
+        def __init__(self, type: Literals, value):
+            super().__init__()
+            self.type = type
+            self.value = value
+
+        def resolve(self, env):
+            return self.value
+
+    class Unary:
+        def __init__(self, operator: Operators, expr):
+            super().__init__()
+            self.operator = operator
+            self.expr = expr
+
+        def resolve(self, env):
+            if self.operator == Operators.SUB_OP:
+                return -self.expr.resolve(env)
+            elif self.operator == Operators.ADD_OP:
+                return self.expr.resolve(env)
             else:
-                raise InterpreterError("Invalid operator in expression")
-        else:
-            return term_val
+                raise InterpreterError("Inavalid unary operator")
 
+    class Binary:
+        def __init__(self, l_expr, operator: Operators,
+                     r_expr):
+            super().__init__()
+            self.l_expr = l_expr
+            self.operator = operator
+            self.r_expr = r_expr
 
-class RelationalExpression:
-    def __init__(self, l_exp: Expression, operator: Operators,
-                 r_exp: Expression):
-        self.l_exp = l_exp
-        self.r_exp = r_exp
-        self.operator = operator
+        def resolve(self, env):
+            l_expr = self.l_expr.resolve(env)
+            r_expr = self.r_expr.resolve(env)
+            if self.operator == Operators.ADD_OP:
+                return l_expr + r_expr
+            elif self.operator == Operators.SUB_OP:
+                return l_expr - r_expr
+            elif self.operator == Operators.MULT_OP:
+                return l_expr * r_expr
+            elif self.operator == Operators.DIV_OP:
+                return l_expr / r_expr
+            elif self.operator == Operators.EQUAL_OP:
+                return bool(l_expr == r_expr)
+            elif self.operator == Operators.GREATER_THAN:
+                return bool(l_expr > r_expr)
+            elif self.operator == Operators.LESS_THAN:
+                return bool(l_expr < r_expr)
+            elif self.operator == Operators.NOT_GREATER:
+                return bool(l_expr <= r_expr)
+            elif self.operator == Operators.NOT_LESS:
+                return bool(l_expr >= r_expr)
+            else:
+                raise InterpreterError("Illegal operator found")
 
-    def resolve(self, env: dict) -> bool:
-        if self.operator == Operators.EQUAL_OP:
-            return bool(self.l_exp.resolve(env) == self.r_exp.resolve(env))
-        elif self.operator == Operators.LESS_THAN:
-            return bool(self.l_exp.resolve(env) < self.r_exp.resolve(env))
-        elif self.operator == Operators.GREATER_THAN:
-            return bool(self.l_exp.resolve(env) > self.r_exp.resolve(env))
-        elif self.operator == Operators.NOT_GREATER:
-            return bool(self.l_exp.resolve(env) <= self.r_exp.resolve(env))
-        elif self.operator == Operators.NOT_LESS:
-            return bool(self.l_exp.resolve(env) >= self.r_exp.resolve(env))
+    class Grouping:
+        def __init__(self, expr):
+            super().__init__()
+            self.expr = expr
+
+        def resolve(self, env):
+            return self.expr.resolve(env)
+
+    class Variable:
+        def __init__(self, identifier):
+            super().__init__()
+            self.identifier = identifier
+
+        def resolve(self, env):
+            return env[self.identifier]
 
 
 class Statement:
@@ -123,7 +122,7 @@ class Statement:
             print(self.expr.resolve(env))
 
     class DoWhile:
-        def __init__(self, rel_expr: RelationalExpression, body: list) -> None:
+        def __init__(self, rel_expr: Expression, body: list) -> None:
             self.rel_expr = rel_expr
             self.body = body
 
@@ -133,7 +132,7 @@ class Statement:
                     statement.execute(env)
 
     class If:
-        def __init__(self, rel_expr: RelationalExpression, body: list):
+        def __init__(self, rel_expr: Expression, body: list):
             self.rel_expr = rel_expr
             self.body = body
 

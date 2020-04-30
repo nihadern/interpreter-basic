@@ -1,9 +1,11 @@
 # interpreter-cpl
+An interpreter for a subset of the BASIC language written in Python.
 # Summary 
 The subset of BASIC chosen includes integers, floats, print statement, if -then statements, do-while loop, assignment statement, and basic float/integer operations. The scanner is implemented in Python 3 as it provides a simple regex library for lexeme recognition and is portable across computers with the python interpreter. The subset grammar is specified on this report with BNF and the lexemes are specified with regular expressions. Overall, this subset provides a few data types with some control flow statements and standard output (of the available data types).
 BASIC Subset Syntax Specification
 The subset chosen is based on the ECMA-116 standard for BASIC. Some basic features like line numbers are omitted for simplicity (line numbers are unnecessary as the GOTO statement is not implemented in this subset). The grammar for the subset can be defined as follows in BNF:
 ```
+
 <program> -> <statements>
 <statements> -> <statement>
                     | <statement> EOL <statements>
@@ -13,27 +15,18 @@ The subset chosen is based on the ECMA-116 standard for BASIC. Some basic featur
                 | <if_stmnt>
                 | END
 <assn_stment> -> LET IDENT EQUAL_OP <expr>
-<expr> -> <term> ADD_OP <expr>
-            | <term> SUB_OP <expr>
-            | <term>
-<term> -> <term> MULT_OP <factor>
-	| <term> DIV_OP <factor>
-	| <factor>
-<factor> -> LEFT_PEREN<expr>RIGHT_PEREN 
- 		| ID 
-| FLOAT_LIT 
-| INT_LIT
-< print_stmnt> -> PRINT <expr>
+<expression> -> <addition> ((EQUAL_OP | LESS_THAN |  GREATER_THAN | NOT_GREATER | NOT_LESS) <addition>)*
+<addition> -> <multiplication> <addition> ((ADD_OP | SUB_OP) <multiplication>)*
+<multiplication> -> <unary> ((DIV_OP | MULT_OP) <unary>)*
+<unary> -> (ADD_OP | SUB_OP) <unary> | <primary>
+<primary> -> FLOAT_LIT | INT_LIT | INT_LIT | RIGHT_PEREN <expr>  LEFT_PEREN
+<print_stmnt> -> PRINT <expr>
 <do_while> -> DO WHILE <relational-expression> EOL <body> LOOP EOL
 <if_stmnt> ->  IF <relational-expression> THEN EOL <body> IF EOL
 body -> <statement><body>
         |<statement> IF
         |<statement> LOOP
-<relational-expression> -> <expr> EQUAL_OP <expr>
-			| <expr> LESS_THAN <expr>
-			| <expr> GREATER_THAN <expr>
-			| <expr> NOT_GREATER <expr>
-			| <expr> NOT_LESS <expr>
+
 ```
 The bracketed expressions are non-terminals and capital expressions are terminals in the above grammar. The lexemes corresponding to the above grammar can be defined with regular expressions: 
 # Token	Regular Expression 

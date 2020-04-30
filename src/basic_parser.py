@@ -127,6 +127,97 @@ class Parser:
         # print("</statement>")
         return statement
 
+    def expr(self) -> Expression:
+        """
+        Function for the expr non-terminal following the BNF rule:
+        <expression> -> <addition> ((EQUAL_OP
+                                    | LESS_THAN
+                                    |  GREATER_THAN
+                                    | NOT_GREATER
+                                    | NOT_LESS) <addition>)*
+        """
+        self.lex()
+        expr = self.addition()
+        while self.next_token.type in (Operators.EQUAL_OP,
+                                       Operators.LESS_THAN,
+                                       Operators.GREATER_THAN,
+                                       Operators.NOT_GREATER,
+                                       Operators.NOT_LESS):
+            operator = self.next_token.type
+            self.lex()
+            right = self.addition()
+            expr = Expression.Binary(expr, operator, right)
+        return expr
+
+    def addition(self):
+        """
+        Function for the addition non-terminal following the BNF rule:
+        <addition> -> <multiplication> ((ADD_OP | SUB_OP) <multiplication>)
+        """
+        expr = self.multiplication()
+        while self.next_token.type in (Operators.ADD_OP, Operators.SUB_OP):
+            operator = self.next_token.type
+            self.lex()
+            right = self.multiplication()
+            expr = Expression.Binary(expr, operator, right)
+        return expr
+
+    def multiplication(self):
+        """
+        Function for the multiplication non-terminal following the BNF rule:
+        <multiplication> -> <unary> ((DIV_OP | MULT_OP) <unary>)*
+        """
+        expr = self.unary()
+        while self.next_token.type in (Operators.MULT_OP, Operators.DIV_OP):
+            operator = self.next_token.type
+            self.lex()
+            right = self.unary()
+            expr = Expression.Binary(expr, operator, right)
+        return expr
+
+    def unary(self):
+        """
+        Function for the unary non-terminal following the BNF rule:
+        <unary> -> (ADD_OP | SUB_OP) <unary> | <primary>
+        """
+        if self.next_token.type in (Operators.ADD_OP, Operators.SUB_OP):
+            operator = self.next_token.type
+            expr = self.expr()
+            return Expression.Unary(operator, expr)
+        else:
+            return self.primary()
+
+    def primary(self):
+        """
+        Function for the unary non-terminal following the BNF rule:
+        <primary > -> FLOAT_LIT
+                    | INT_LIT
+                    | RIGHT_PEREN < expr > LEFT_PEREN
+        """
+        if self.next_token.type == Literals.FLOAT_LIT:
+            expr = Expression.Literal(Literals.FLOAT_LIT,
+                                      float(self.next_token.lexeme))
+            self.lex()
+            return expr
+        elif self.next_token.type == Literals.INT_LIT:
+            expr = Expression.Literal(Literals.INT_LIT,
+                                      int(self.next_token.lexeme))
+            self.lex()
+            return expr
+        elif self.next_token.type == Operators.LEFT_PEREN:
+            expr = self.expr()
+            if self.next_token.type != Operators.RIGHT_PEREN:
+                raise ParserError(self.next_token.pos,
+                                  "Mismatched perenthesis")
+            self.lex()
+            return Expression.Grouping(expr)
+        elif self.next_token.type == Identifiers.IDENT:
+            expr = Expression.Variable(self.next_token.lexeme)
+            self.lex()
+            return expr
+        else:
+            raise ParserError(self.next_token.pos, "Illegal primary")
+
     def assn_stmnt(self):
         """
         Function for the assn_stmnt non-terminal following the BNF rule:
@@ -151,89 +242,6 @@ class Parser:
         # exit assig_stmnt
         # print("</assn_stmnt>")
         return Statement.Assignment(identifier, expression)
-
-    def expr(self):
-        """
-        Function for the expr non-terminal following the BNF rule:
-        <expr> -> <term> ADD_OP <expr>
-                | <term> SUB_OP <expr>
-                | <term>
-        """
-        # enter expr
-        # print("<expr>")
-        # parse a term
-        term = self.term()
-        operator = None
-        expression = None
-        # check for addition or subtraction, if so parse the expression after
-        if self.next_token.type == Operators.ADD_OP:
-            operator = Operators.ADD_OP
-            expression = self.expr()
-        elif self.next_token.type == Operators.SUB_OP:
-            operator = Operators.SUB_OP
-            expression = self.expr()
-        # exit expression
-        # print("</expr>")
-        return Expression(operator, term, expression)
-
-    def term(self):
-        """
-        Function for the term non-terminal following the BNF rule:
-        <term> -> <factor> MULT_OP <term>
-                | <factor> DIV_OP <term>
-                | <factor>
-        """
-        # enter term
-        # print("<term>")
-        # parse a factor
-        factor = self.factor()
-        operator = None
-        # check for multiplication/division, if so parse another term
-        self.lex()
-        term = None
-        if self.next_token.type == Operators.MULT_OP:
-            operator = Operators.MULT_OP
-            term = self.term()
-        elif self.next_token.type == Operators.DIV_OP:
-            operator = Operators.DIV_OP
-            term = self.term()
-        # exit term
-        # print("</term>")
-        return Term(factor, operator, term)
-
-    def factor(self):
-        """
-        Function for the factor non-terminal following the BNF rule:
-        <factor> -> LEFT_PEREN<expr>RIGHT_PEREN | ID | FLOAT_LIT | INT_LIT
-        """
-        # enter factor
-        # print("<factor>")
-        # look for parentheses
-        self.lex()
-        if self.next_token.type == Operators.LEFT_PEREN:
-            type_of = type(Expression)
-            # parse an expression
-            value = self.expr()
-            # ensure parenthesis are balanced
-            if self.next_token.type != Operators.RIGHT_PEREN:
-                raise ParserError(
-                    self.next_token.pos, "Mismatched parenthesis")
-        # if identifier. int_lit, or float_lit, reached terminal, do nothing
-        elif self.next_token.type == Identifiers.IDENT:
-            type_of = Identifiers.IDENT
-            value = self.next_token.lexeme
-        elif self.next_token.type == Literals.INT_LIT:
-            type_of = Literals.INT_LIT
-            value = int(self.next_token.lexeme)
-        elif self.next_token.type == Literals.FLOAT_LIT:
-            type_of = Literals.FLOAT_LIT
-            value = float(self.next_token.lexeme)
-        else:
-            # raise an error if none of the above conditions matched
-            raise ParserError(self.next_token.pos, "Invalid factor")
-        # exit factor
-        # print("</factor>")
-        return Factor(type_of, value)
 
     def print_stmnt(self):
         """
@@ -261,7 +269,7 @@ class Parser:
         if self.next_token.type != Keywords.WHILE:
             raise ParserError(self.next_token.pos, "Invalid loop")
         # parse relational expression
-        rel_exp = self.relational_expr()
+        rel_exp = self.expr()
         # parse the body
         body = self.body()
         # check for loop end else raise error
@@ -283,7 +291,7 @@ class Parser:
         # enter if_stmnt
         # print("<if_stmnt>")
         # parse relational expression
-        rel_exp = self.relational_expr()
+        rel_exp = self.expr()
         # check for if otherwise raise error
         if self.next_token.type != Keywords.THEN:
             raise ParserError(self.next_token.pos, "Invalid if statement")
@@ -303,40 +311,6 @@ class Parser:
         # exit if_stmnt
         # print("</if_stmnt>")
         return Statement.If(rel_exp, body)
-
-    def relational_expr(self):
-        """
-        Function for the relational_expr non-terminal following the BNF rule:
-        <relational-expression> -> <expr> EQUAL_OP <expr>
-                                    | <expr> LESS_THAN <expr>
-                                    | <expr> GREATER_THAN <expr>
-                                    | <expr> NOT_GREATER <expr>
-                                    | <expr> NOT_LESS <expr>
-        """
-        # enter relational_expr
-        # print("<relational_expr>")
-        # parse the expression
-        l_expr = self.expr()
-        operator = None
-        # parse another expression if an operator is present
-        if self.next_token.type == Operators.EQUAL_OP:
-            operator = Operators.EQUAL_OP
-            r_expr = self.expr()
-        elif self.next_token.type == Operators.LESS_THAN:
-            operator = Operators.LESS_THAN
-            r_expr = self.expr()
-        elif self.next_token.type == Operators.GREATER_THAN:
-            operator = Operators.GREATER_THAN
-            r_expr = self.expr()
-        elif self.next_token.type == Operators.NOT_GREATER:
-            operator = Operators.NOT_GREATER
-            r_expr = self.expr()
-        elif self.next_token.type == Operators.NOT_LESS:
-            operator = Operators.NOT_LESS
-            r_expr = self.expr()
-        # exit relational_expr
-        # print("</relational_expr>")
-        return RelationalExpression(l_expr, operator, r_expr)
 
     def body(self):
         """
@@ -400,6 +374,7 @@ def main():
         try:
             # start parsing the program
             parse_tree = parser.program()
+            print(parse_tree)
         except ParserError as e:
             # if a parsing error occurred, alert the user
             print(e)

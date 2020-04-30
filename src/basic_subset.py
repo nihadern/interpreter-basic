@@ -91,8 +91,8 @@ ALPHA = (
 # i.e. data types, operators, identifier
 NON_ALPHA = (
     # check for the two data types, float and integer
-    (re.compile(r'[-+]?\d*\.\d+'), Literals.FLOAT_LIT),
-    (re.compile(r'[-+]?[0-9]+'), Literals.INT_LIT),
+    (re.compile(r'\d*\.\d+'), Literals.FLOAT_LIT),
+    (re.compile(r'[0-9]+'), Literals.INT_LIT),
     # check for operators
     (re.compile(r'\)'), Operators.RIGHT_PEREN),
     (re.compile(r'\('), Operators.LEFT_PEREN),
