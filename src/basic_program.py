@@ -48,6 +48,67 @@ class InterpreterError(Exception):
         return "InterpreterError: {}".format(self.err)
 
 
+class ExpressionVisitor(ABC):
+    """
+    Abstract base class for a expression visitor following the visitor pattern.
+    Acts as a contract for a concrete visitor class (like interpreter).
+
+    Arguments:
+        ABC {object} -- Used to define an abstract base class.
+    """
+    @abstractmethod
+    def visit_binary(self, binary_exp: Expression.Binary):
+        """
+        Visit method for a binary expression.
+
+        Arguments:
+            binary_exp {Expression.Binary} -- The binary expression visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_unary(self, unary_exp: Expression.Unary):
+        """
+        Visit method for a unary expression.
+
+        Arguments:
+            unary_exp {Expression.Unary} -- The unary expression visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_literal(self, literal_exp: Expression.Literal):
+        """
+        Visit method for a literal expression.
+
+        Arguments:
+            literal_exp {Expression.Literal} -- The literal expression visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_grouping(self, grouping_exp: Expression.Grouping):
+        """
+        Visit method for a grouping expression.
+
+        Arguments:
+            grouping_exp {Expression.Grouping} -- The grouping expression
+            visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_variable(self, variable_exp: Expression.Variable):
+        """
+        Visit method for a variable expression.
+
+        Arguments:
+            variable_exp {Expression.Variable} --  The variable expression
+            visited.
+        """
+        pass
+
+
 class Expression:
     """
     Base class for expressions that includes all types of valid expressions
@@ -67,6 +128,9 @@ class Expression:
             super().__init__()
             self.type = type
             self.value = value
+
+        def accept(self, visitor: ExpressionVisitor):
+            visitor.visit_literal(self)
 
         def resolve(self, env: dict) -> Union[float, int]:
             """
@@ -91,6 +155,9 @@ class Expression:
             super().__init__()
             self.operator = operator
             self.expr = expr
+
+        def accept(self, visitor: ExpressionVisitor):
+            visitor.visit_unary(self)
 
         def resolve(self, env: dict) -> Union[float, int]:
             """
@@ -126,6 +193,9 @@ class Expression:
             self.l_expr = l_expr
             self.operator = operator
             self.r_expr = r_expr
+
+        def accept(self, visitor: ExpressionVisitor):
+            visitor.visit_binary(self)
 
         def resolve(self, env: dict) -> Union[float, int, bool]:
             """
@@ -175,6 +245,9 @@ class Expression:
             super().__init__()
             self.expr = expr
 
+        def accept(self, visitor: ExpressionVisitor):
+            visitor.visit_grouping(self)
+
         def resolve(self, env: dict) -> Union[float, int]:
             """
             The value of a grouping expression is the value resolved
@@ -198,6 +271,9 @@ class Expression:
             super().__init__()
             self.identifier = identifier
 
+        def accept(self, visitor: ExpressionVisitor):
+            visitor.visit_variable(self)
+
         def resolve(self, env: dict) -> Union[float, int]:
             """
             The value of a variable expression returns the variable value
@@ -213,6 +289,61 @@ class Expression:
             return env[self.identifier]
 
 
+class StatementVisitor(ABC):
+
+    @abstractmethod
+    def visit_assignment(self, assign_stmnt: Statement.Assignment):
+        """
+        Visit method for a assignment statement.
+
+        Arguments:
+            assign_stmnt {Statement.Assignment} -- The assignment statement
+            visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_print(self, print_stmnt: Statement.Print):
+        """
+        Visit method for a print statement.
+
+        Arguments:
+            print_stmnt {Statement.Print} -- The print statement visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_dowhile(self, dowhile_stmnt: Statement.DoWhile):
+        """
+        Visit method for a do while statement.
+
+        Arguments:
+            dowhile_stmnt {Statement.DoWhile} -- The do while statement
+            visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_if(self, if_stmnt: Statement.If):
+        """
+        Visit method for an if statement.
+
+        Arguments:
+            if_stmnt {Statement.If} -- The if statement visited.
+        """
+        pass
+
+    @abstractmethod
+    def visit_end(self, end_stmnt: Statement.End):
+        """
+        Visit method for an end statement.
+
+        Arguments:
+            end_stmnt {Statement.End} -- The end statement visited.
+        """
+        pass
+
+
 class Statement:
     """
     Base class for all valid statements in the BASIC subset.
@@ -225,6 +356,9 @@ class Statement:
         def __init__(self, identifier: str, expr: Expression):
             self.identifier = identifier
             self.expr = expr
+
+        def accept(self, visitor: StatementVisitor):
+            visitor.visit_assignment(self)
 
         def execute(self, env: dict) -> None:
             """
@@ -245,6 +379,9 @@ class Statement:
         def __init__(self, expr: Expression):
             self.expr = expr
 
+        def accept(self, visitor: StatementVisitor):
+            visitor.visit_print(self)
+
         def execute(self, env: dict) -> None:
             """
             Executing a print statement prints the expression value to
@@ -264,6 +401,9 @@ class Statement:
         def __init__(self, rel_expr: Expression, body: list) -> None:
             self.rel_expr = rel_expr
             self.body = body
+
+        def accept(self, visitor: StatementVisitor):
+            visitor.visit_dowhile(self)
 
         def execute(self, env: dict) -> None:
             """
@@ -287,8 +427,11 @@ class Statement:
             self.rel_expr = rel_expr
             self.body = body
 
+        def accept(self, visitor: StatementVisitor):
+            visitor.visit_if(self)
+
         def execute(self, env: dict) -> None:
-            """"
+            """
             Excecuting an IF statement executes all statements in the body
             if the relational expression is True.
 
@@ -304,6 +447,9 @@ class Statement:
         """
         Placeholder for the END statement
         """
+
+        def accept(self, visitor: StatementVisitor):
+            visitor.visit_end(self)
 
         def execute(self, env: dict) -> None:
             """
