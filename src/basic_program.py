@@ -20,34 +20,6 @@ The tree is represented as classes which are meant to be nested.
 """
 
 
-class InterpreterError(Exception):
-    """
-    Exception class for a Interpreter error.
-    Used in case a Interpreter error occurs.
-    """
-
-    def __init__(self, err=None):
-        """
-        Simple constructor to assign InterpreterError attributes.
-
-        Parameters:
-        pos (tuple): tuple of length 2 of the form (row, column)
-        pos (str): string description of an error, a generic error is used
-        if none is given
-        """
-
-        if err is None:
-            # use a default error if none specified
-            err = "Interpreter error occured."
-        self.err = err
-
-    def __str__(self) -> str:
-        """
-        Returns an error message with details of the error.
-        """
-        return "InterpreterError: {}".format(self.err)
-
-
 class ExpressionVisitor(ABC):
     """
     Abstract base class for a expression visitor following the visitor pattern.
@@ -57,37 +29,37 @@ class ExpressionVisitor(ABC):
         ABC {object} -- Used to define an abstract base class.
     """
     @abstractmethod
-    def visit_binary(self, binary_exp: Expression.Binary):
+    def visit_binary(self, binary_exp):
         """
         Visit method for a binary expression.
 
         Arguments:
             binary_exp {Expression.Binary} -- The binary expression visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_unary(self, unary_exp: Expression.Unary):
+    def visit_unary(self, unary_exp):
         """
         Visit method for a unary expression.
 
         Arguments:
             unary_exp {Expression.Unary} -- The unary expression visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_literal(self, literal_exp: Expression.Literal):
+    def visit_literal(self, literal_exp):
         """
         Visit method for a literal expression.
 
         Arguments:
             literal_exp {Expression.Literal} -- The literal expression visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_grouping(self, grouping_exp: Expression.Grouping):
+    def visit_grouping(self, grouping_exp):
         """
         Visit method for a grouping expression.
 
@@ -95,10 +67,10 @@ class ExpressionVisitor(ABC):
             grouping_exp {Expression.Grouping} -- The grouping expression
             visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_variable(self, variable_exp: Expression.Variable):
+    def visit_variable(self, variable_exp):
         """
         Visit method for a variable expression.
 
@@ -106,7 +78,7 @@ class ExpressionVisitor(ABC):
             variable_exp {Expression.Variable} --  The variable expression
             visited.
         """
-        pass
+        raise NotImplementedError
 
 
 class Expression:
@@ -130,20 +102,7 @@ class Expression:
             self.value = value
 
         def accept(self, visitor: ExpressionVisitor):
-            visitor.visit_literal(self)
-
-        def resolve(self, env: dict) -> Union[float, int]:
-            """
-            Resolving a literal returns the value of the literal.
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-
-            Returns:
-                Number -- a float or int is returned depending on the literal
-            """
-            return self.value
+            return visitor.visit_literal(self)
 
     class Unary:
         """
@@ -157,29 +116,7 @@ class Expression:
             self.expr = expr
 
         def accept(self, visitor: ExpressionVisitor):
-            visitor.visit_unary(self)
-
-        def resolve(self, env: dict) -> Union[float, int]:
-            """
-            Resolving a unary expression returns the operator applied to the
-            value of the expressio.
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-
-            Raises:
-                InterpreterError: If an invalid operator is found
-
-            Returns:
-                Union[float, int] -- depends on the value of expression
-            """
-            if self.operator == Operators.SUB_OP:
-                return -self.expr.resolve(env)
-            elif self.operator == Operators.ADD_OP:
-                return self.expr.resolve(env)
-            else:
-                raise InterpreterError("Inavalid unary operator")
+            return visitor.visit_unary(self)
 
     class Binary:
         """
@@ -195,46 +132,7 @@ class Expression:
             self.r_expr = r_expr
 
         def accept(self, visitor: ExpressionVisitor):
-            visitor.visit_binary(self)
-
-        def resolve(self, env: dict) -> Union[float, int, bool]:
-            """
-            Resolving a binary expression returns the operator appplied to
-            the resolved left and right expression.
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-
-            Raises:
-                InterpreterError: IF an invalid operator is found.
-
-            Returns:
-                Union[float, int, bool] -- depending on the operator and
-                expression, a float, int, or boolean in returned.
-            """
-            l_expr = self.l_expr.resolve(env)
-            r_expr = self.r_expr.resolve(env)
-            if self.operator == Operators.ADD_OP:
-                return l_expr + r_expr
-            elif self.operator == Operators.SUB_OP:
-                return l_expr - r_expr
-            elif self.operator == Operators.MULT_OP:
-                return l_expr * r_expr
-            elif self.operator == Operators.DIV_OP:
-                return l_expr / r_expr
-            elif self.operator == Operators.EQUAL_OP:
-                return bool(l_expr == r_expr)
-            elif self.operator == Operators.GREATER_THAN:
-                return bool(l_expr > r_expr)
-            elif self.operator == Operators.LESS_THAN:
-                return bool(l_expr < r_expr)
-            elif self.operator == Operators.NOT_GREATER:
-                return bool(l_expr <= r_expr)
-            elif self.operator == Operators.NOT_LESS:
-                return bool(l_expr >= r_expr)
-            else:
-                raise InterpreterError("Illegal operator found")
+            return visitor.visit_binary(self)
 
     class Grouping:
         """
@@ -246,21 +144,7 @@ class Expression:
             self.expr = expr
 
         def accept(self, visitor: ExpressionVisitor):
-            visitor.visit_grouping(self)
-
-        def resolve(self, env: dict) -> Union[float, int]:
-            """
-            The value of a grouping expression is the value resolved
-            expression inside .
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-
-            Returns:
-                Union[float, int] -- depends on the value of expression
-            """
-            return self.expr.resolve(env)
+            return visitor.visit_grouping(self)
 
     class Variable:
         """
@@ -272,27 +156,13 @@ class Expression:
             self.identifier = identifier
 
         def accept(self, visitor: ExpressionVisitor):
-            visitor.visit_variable(self)
-
-        def resolve(self, env: dict) -> Union[float, int]:
-            """
-            The value of a variable expression returns the variable value
-            in the enviornment
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-
-            Returns:
-                Union[float, int] -- depends on the value of the variable
-            """
-            return env[self.identifier]
+            return visitor.visit_variable(self)
 
 
 class StatementVisitor(ABC):
 
     @abstractmethod
-    def visit_assignment(self, assign_stmnt: Statement.Assignment):
+    def visit_assignment(self, assign_stmnt):
         """
         Visit method for a assignment statement.
 
@@ -300,20 +170,20 @@ class StatementVisitor(ABC):
             assign_stmnt {Statement.Assignment} -- The assignment statement
             visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_print(self, print_stmnt: Statement.Print):
+    def visit_print(self, print_stmnt):
         """
         Visit method for a print statement.
 
         Arguments:
             print_stmnt {Statement.Print} -- The print statement visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_dowhile(self, dowhile_stmnt: Statement.DoWhile):
+    def visit_dowhile(self, dowhile_stmnt):
         """
         Visit method for a do while statement.
 
@@ -321,27 +191,27 @@ class StatementVisitor(ABC):
             dowhile_stmnt {Statement.DoWhile} -- The do while statement
             visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_if(self, if_stmnt: Statement.If):
+    def visit_if(self, if_stmnt):
         """
         Visit method for an if statement.
 
         Arguments:
             if_stmnt {Statement.If} -- The if statement visited.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def visit_end(self, end_stmnt: Statement.End):
+    def visit_end(self, end_stmnt):
         """
         Visit method for an end statement.
 
         Arguments:
             end_stmnt {Statement.End} -- The end statement visited.
         """
-        pass
+        raise NotImplementedError
 
 
 class Statement:
@@ -358,18 +228,7 @@ class Statement:
             self.expr = expr
 
         def accept(self, visitor: StatementVisitor):
-            visitor.visit_assignment(self)
-
-        def execute(self, env: dict) -> None:
-            """
-            Execution of an assignment sets the value of the variable to
-            the value of the reslved expression in the enviornment.
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-            """
-            env[self.identifier] = self.expr.resolve(env)
+            return visitor.visit_assignment(self)
 
     class Print:
         """
@@ -380,18 +239,7 @@ class Statement:
             self.expr = expr
 
         def accept(self, visitor: StatementVisitor):
-            visitor.visit_print(self)
-
-        def execute(self, env: dict) -> None:
-            """
-            Executing a print statement prints the expression value to
-            STDOUT.
-
-            Arguments:
-                env {dict} -- enviornment of the interpreter where variables
-                are stored.
-            """
-            print(self.expr.resolve(env))
+            return visitor.visit_print(self)
 
     class DoWhile:
         """
@@ -403,20 +251,7 @@ class Statement:
             self.body = body
 
         def accept(self, visitor: StatementVisitor):
-            visitor.visit_dowhile(self)
-
-        def execute(self, env: dict) -> None:
-            """
-            Excecuting a DO WHILE loop executes all statements in the body
-            while the relational expression is True.
-
-            Arguments:
-               env {dict} -- enviornment of the interpreter where variables
-                are stored.
-            """
-            while self.rel_expr.resolve(env):
-                for statement in self.body:
-                    statement.execute(env)
+            return visitor.visit_dowhile(self)
 
     class If:
         """
@@ -428,20 +263,7 @@ class Statement:
             self.body = body
 
         def accept(self, visitor: StatementVisitor):
-            visitor.visit_if(self)
-
-        def execute(self, env: dict) -> None:
-            """
-            Excecuting an IF statement executes all statements in the body
-            if the relational expression is True.
-
-            Arguments:
-               env {dict} - - enviornment of the interpreter where variables
-                are stored.
-            """
-            if self.rel_expr.resolve(env):
-                for statement in self.body:
-                    statement.execute(env)
+            return visitor.visit_if(self)
 
     class End:
         """
@@ -449,17 +271,7 @@ class Statement:
         """
 
         def accept(self, visitor: StatementVisitor):
-            visitor.visit_end(self)
-
-        def execute(self, env: dict) -> None:
-            """
-            Executing the end statement does nothing.
-
-            Arguments:
-                env {dict} - - enviornment of the interpreter where variables
-                are stored.
-            """
-            pass
+            return visitor.visit_end(self)
 
 
 class Program:
@@ -469,14 +281,3 @@ class Program:
 
     def __init__(self, statements: list):
         self.statements = statements
-
-    def execute(self, env: dict) -> None:
-        """
-        Executing a program executes all of the statements in the program.
-
-        Arguments:
-            env {dict} - - enviornment of the interpreter where variables
-                are stored.
-        """
-        for statement in self.statements:
-            statement.execute(env)
