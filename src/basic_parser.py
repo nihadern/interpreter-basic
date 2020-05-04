@@ -11,7 +11,7 @@ Created by Nihad Kalathingal and Nick Green on 3/19/2020. Modified (03-20-2020)
 """
 
 from basic_scanner import *   # import scanner and scanner errors
-from basic_subset import *  # import the basic subset with the tokens
+from basic_tokens import *  # import the basic subset with the tokens
 import sys  # import sys used for CLI args
 from basic_program import *
 """

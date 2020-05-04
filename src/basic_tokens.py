@@ -101,10 +101,10 @@ NON_ALPHA = (
     (re.compile(r'\*'), Operators.MULT_OP),
     (re.compile(r'\/'), Operators.DIV_OP),
     (re.compile(r'='), Operators.EQUAL_OP),
-    (re.compile(r'<'), Operators.LESS_THAN),
-    (re.compile(r'>'), Operators.GREATER_THAN),
     (re.compile(r'<='), Operators.NOT_GREATER),
     (re.compile(r'>='), Operators.NOT_LESS),
+    (re.compile(r'<'), Operators.LESS_THAN),
+    (re.compile(r'>'), Operators.GREATER_THAN),
     # check for end of line
     (re.compile(r'\n'), Delimiters.EOL),
     # check for identifier last

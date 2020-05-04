@@ -11,11 +11,11 @@ Created by Nihad Kalathingal on 2/23/2020. Modified (03-04-2020)
 
 import re  # import regex library used to match lexemes
 import sys  # import sys library used for CLI arguments
-from basic_subset import *   # import the basic subset to be used
+from basic_tokens import *   # import the basic subset to be used
 
 """
 The scanner is implemented in the Scanner class which uses the rules
-specified in the basic_subset.py file. The scanner is instansiated
+specified in the basic_tokens.py file. The scanner is instansiated
 with a source file and returns the associated tokens in that file.
 The scanner throws an exception of type ScannerError if a unkown lexeme
 is found. The class Token is the output of the Scanner which contains
@@ -28,6 +28,7 @@ class Token:
     """
     Class for token which contains the type, postion, and lexeme.
     """
+
     def __init__(self, type: Tokens, lexeme: str, pos: tuple):
         """
         Simple constructor to assign token attributes
@@ -56,6 +57,7 @@ class ScannerError(Exception):
     Exception class for a scanner error.
     Used in case a lexeme is not found.
     """
+
     def __init__(self, pos: tuple):
         """
         Simple constructor to assign ScannerError attributes.
@@ -70,8 +72,8 @@ class ScannerError(Exception):
         Returns an error message with details of the error.
         """
         return "ScannerError: Unknown lexeme at Ln:{} Col:{}".format(
-                                                              self.pos[0],
-                                                              self.pos[1])
+            self.pos[0],
+            self.pos[1])
 
 
 class Scanner:
@@ -79,6 +81,7 @@ class Scanner:
     Scanner class which tokenizes from a given buffer based on regex rules
     for lexemes.
     """
+
     def __init__(self, source):
         """
         Simple constructor to assign Scanner attributes.
