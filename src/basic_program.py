@@ -9,7 +9,7 @@ Created by Nihad Kalathingal and Nick Green on 4/26/2020. Modified (04-30-2020)
     Nihad Kalathingal (nkalathi@students.kennesaw.edu)
     Nick Green (ngreen@students.kennesaw.edu)
 """
-from basic_subset import Operators, Literals, Identifiers, Tokens
+from basic_tokens import Operators, Literals, Identifiers, Tokens
 from typing import Union
 from abc import ABC, abstractmethod
 

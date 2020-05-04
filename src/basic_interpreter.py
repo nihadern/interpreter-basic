@@ -16,7 +16,7 @@ from basic_parser import ParserError, Parser
 from basic_program import ExpressionVisitor, Expression, StatementVisitor
 from basic_program import Statement, Program
 from typing import Union
-from basic_subset import Operators, Literals
+from basic_tokens import Operators, Literals
 
 """
 This file includes the interpreter class which is used to execute/interpret
