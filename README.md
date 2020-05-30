@@ -1,4 +1,4 @@
-# interpreter-cpl
+# interpreter-basic
 An interpreter for a subset of the BASIC language written in Python.
 # Summary 
 The subset of BASIC chosen includes integers, floats, print statement, if -then statements, do-while loop, assignment statement, and basic float/integer operations. The subset grammar is specified on this report with BNF and the lexemes are specified with regular expressions. Overall, this subset provides a few data types with some control flow statements and standard output (of the available data types).
